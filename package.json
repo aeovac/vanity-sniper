@@ -1,0 +1,5 @@
+{
+  "name": "sniper",
+  "module": "index.ts",
+  "type": "module"
+}
