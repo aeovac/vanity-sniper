@@ -3,7 +3,7 @@ import http from 'undici';
 import { guildID, targetID, token, vanity, mfa } from './config';
 import erl from '@typescord/ftee'
 
-const client = new WebSocket('wss://gateway.discord.gg/?v=v9&encoding=json');
+const client = new WebSocket('wss://gateway.discord.gg/?v=9&encoding=etf');
 
 const dispatcher = new http.Agent({    
     pipelining: 0,
@@ -22,7 +22,7 @@ const headers = {
 
 const HEARTBEAT = erl.encode('{"op": 1, "d": null}');
 const IDENTIFY =  erl.encode(`{"op": 2, "d":{"token": "${token}", "intents": 37376,"properties": { "$os":"linux", "$browser":"bun", "$device": "bun"}}}`);
-const BODY =  erl.encode(`"{ "code": ${vanity} }"`);
+const BODY =  Buffer.from(`"{ "code": ${vanity} }"`);
 
 client.onmessage = (({ data }) => {
     const x = erl.decode(data);
