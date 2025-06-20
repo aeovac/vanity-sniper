@@ -1,9 +1,10 @@
 import { green, red } from 'kleur';
 import http from 'undici';
 import { guildID, targetID, token, vanity, mfa } from './config';
+import erl from '@typescord/ftee'
 
 const client = new WebSocket('wss://gateway.discord.gg/?v=v9&encoding=json');
-http.connect
+
 const dispatcher = new http.Agent({    
     pipelining: 0,
     bodyTimeout: 2000,
@@ -12,9 +13,6 @@ const dispatcher = new http.Agent({
     keepAliveTimeout: 1000,
 });
 
-const encoder = new TextEncoder();
-const decoder = new TextDecoder();
-
 const headers = { 
     'Authorization': `${token}`,
     'user-agent': '',
@@ -22,28 +20,31 @@ const headers = {
     'X-Discord-Mfa-Authorization': mfa
 };
 
+const HEARTBEAT = erl.encode('{"op": 1, "d": null}');
+const IDENTIFY =  erl.encode(`{"op": 2, "d":{"token": "${token}", "intents": 37376,"properties": { "$os":"linux", "$browser":"bun", "$device": "bun"}}}`);
+const BODY =  erl.encode(`"{ "code": ${vanity} }"`);
+
 client.onmessage = (({ data }) => {
-    const x = typeof data === 'string' ? data : decoder.decode(data as Buffer);
-    const { op, d, t } = JSON.parse(x)
+    const x = erl.decode(data);
+    if(typeof x !== 'object') return;
+
+    const { op, d, t }: any = x;
 
     op == 10
         ? (() => {
-            setInterval(() => client.send(encoder.encode('{"op": 1, "d": null}')), d.heartbeat_interval);
-            client.send(`{"op": 2, "d":{"token": "${token}", "intents": 37376,"properties": { "$os":"linux", "$browser":"bun", "$device": "bun"}}}`);
+            setInterval(() => client.send(HEARTBEAT), d.heartbeat_interval);
+            client.send(IDENTIFY);
         })()
         : op == 0
             ? setImmediate(async () => {
                 if(t != "GUILD_UPDATE") return;
                 if(d.guild_id != targetID || d.vanity_url != vanity) return;
-
                 
-                const { body, statusCode } = await http.request(
-                    `https://discord.com/api/v9/guilds/${guildID}/vanity-url`,
-                    {   
-                        method: 'PATCH',
-                        dispatcher,
-                        headers,
-                        body: `"{ "code": ${vanity} }"`
+                const { body, statusCode } = await http.request(`https://discord.com/api/v9/guilds/${guildID}/vanity-url`, {   
+                    method: 'PATCH',
+                    dispatcher,
+                    headers,
+                    body: BODY
                 });
 
                 await body.dump();
