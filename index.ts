@@ -1,7 +1,7 @@
 import { green, red } from 'kleur';
 import http from 'undici';
 import { guildID, targetID, token, vanity, mfa } from './config';
-import erl from '@typescord/ftee'
+import { encode, decode } from '@typescord/ftee'
 import { dns } from 'bun';
 
 await Promise.allSellted([
@@ -39,14 +39,14 @@ const headers = {
     'Keep-alive': 'timeout=5,max=100'
 };
 
-const HEARTBEAT = erl.encode('{"op": 1, "d": null}');
-const IDENTIFY =  erl.encode(`{"op": 2, "d":{"token": "${token}", "intents": 37376,"properties": { "$os":"linux", "$browser":"bun", "$device": "bun"}}}`);
+const HEARTBEAT = encode('{"op": 1, "d": null}');
+const IDENTIFY = encode(`{"op": 2, "d":{"token": "${token}", "intents": 37376,"properties": { "$os":"linux", "$browser":"bun", "$device": "bun"}}}`);
 const BODY =  Buffer.from(`"{ "code": ${vanity} }"`);
 
 Bun.gc(true);
 
 client.onmessage = (({ data }) => {
-    const x = erl.decode(data);
+    const x = decode(data);
     if(typeof x !== 'object') return;
 
     const { op, d, t }: any = x;
