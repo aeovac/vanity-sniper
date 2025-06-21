@@ -1,10 +1,10 @@
 import { green, red } from 'kleur';
-import http from 'undici';
+import http, { setGlobalDispatcher } from 'undici';
 import { guildID, targetID, token, vanity, mfa } from './config';
 import { encode, decode } from '@typescord/ftee'
 import { dns } from 'bun';
 
-await Promise.allSellted([
+await Promise.allSettled([
     dns.prefetch('discord.com'),
     dns.prefetch('gateway.discord.gg'),
     //Add other potential endpoints
@@ -12,8 +12,9 @@ await Promise.allSellted([
 
 const client = new WebSocket('wss://gateway.discord.gg/?v=9&encoding=etf');
 
-const dispatcher = new http.Dispatcher({    
+const dispatcher = new http.Agent({    
     pipelining: 15,
+    connections: 1000,
     bodyTimeout: 250,
     headersTimeout: 150,
     keepAliveMaxTimeout: 1000,
@@ -21,14 +22,12 @@ const dispatcher = new http.Dispatcher({
     connect: {
         rejectUnauthorized: false,
         socketPath: undefined,
-        tcpNoDelay: true,
-        tcpKeepAlive: true
-    },
-    tls: {
-        sessionTimeout: 0,
-        tiemout: 100
+        noDelay: true,
+        keepAlive: true
     }
 });
+
+setGlobalDispatcher(dispatcher);
 
 const headers = { 
     'Authorization': `${token}`,
@@ -57,7 +56,7 @@ client.onmessage = (({ data }) => {
             client.send(IDENTIFY);
         })()
         : op == 0
-            ? (() => {
+            ? (async () => {
                 if(t != "GUILD_UPDATE") return;
                 if(d.guild_id != targetID || d.vanity_url != vanity) return;
                 
@@ -65,7 +64,7 @@ client.onmessage = (({ data }) => {
                     method: 'PATCH',
                     dispatcher,
                     headers,
-                    body: BODY,
+                    body: BODY
                 });
 
                 console.log(statusCode === 200 ? green('Success') : red('Error' + statusCode));     
