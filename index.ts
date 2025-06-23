@@ -13,12 +13,11 @@ await Promise.allSettled([
 const client = new WebSocket('wss://gateway.discord.gg/?v=9&encoding=etf');
 
 const dispatcher = new http.Agent({    
-    pipelining: 15,
-    connections: 1000,
-    bodyTimeout: 250,
-    headersTimeout: 150,
-    keepAliveMaxTimeout: 1000,
-    keepAliveTimeout: 250,
+    pipelining: 20,
+    connections: 1500,
+    bodyTimeout: 150,
+    headersTimeout: 100,
+    keepAliveTimeout: 100,
     connect: {
         rejectUnauthorized: false,
         socketPath: undefined,
@@ -27,7 +26,7 @@ const dispatcher = new http.Agent({
     }
 });
 
-setGlobalDispatcher(dispatcher);
+// setGlobalDispatcher(dispatcher);
 
 const headers = { 
     'Authorization': `${token}`,
